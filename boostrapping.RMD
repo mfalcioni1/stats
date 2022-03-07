@@ -1,0 +1,27 @@
+# When to boostrap
+1. distribution of statistic is unknown
+    - Boostrapping is non-parametric, so it has no distibutional assumptions
+2. when the sample is too small for inference
+    - boostrapping is resampling with replacement
+3. expand on a pilot study
+    - estimate the population variance by creating the distribution
+    - can be used for power calculations to inform a larger study
+4. estimating error of the statistic is not feasible
+    - the standard error of the statistic of the boostrapped samples
+    - i.e. r-squared
+## Risks
+When the underlying distribution is unknown, and lacks a finite variance (i.e. heavy tailed, power law) then the boostrap's distribution will not follow similar convergence.
+```{r, eval = FALSE}
+install.packages("boot")
+```
+
+Testing it out on some data
+```{r}
+library(boot)
+coin <- sample(0:1, 10, replace = TRUE)
+b_mean <- function(x, i) mean(x[i], trim = 0)
+coin_mean <- boot(coin,
+    statistic = b_mean, R = 100)
+plot(coin_mean)
+boot.ci(coin_mean)
+```
