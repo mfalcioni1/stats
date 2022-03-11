@@ -16,31 +16,12 @@ library(cowplot) #multiple plots
 ## Getting COVID and weather data from BQ
 # https://github.com/open-covid-19/data
 # `bigquery-public-data.covid19_open_data.covid19_open_data`
-config <- 
+# configs
+config <- fromJSON(file = "./gcp-config.json")
+project <- config$`project-id`
+bq_auth(token = config$`data-bot`)
 
-'SELECT country_name
-, date 
-, new_confirmed
-, new_deceased
-, sum(new_confirmed)
-OVER (
-    PARTITION BY country_name
-    ORDER BY date ASC
-    ROWS UNBOUNDED PRECEDING
-) as cumulative_total_cases
-, sum(new_deceased)
-OVER (
-    PARTITION BY country_name
-    ORDER BY date ASC
-    ROWS UNBOUNDED PRECEDING
-) as cumulative_total_deceased
-, avg(new_confirmed)
-OVER (
-    PARTITION BY country_name
-    ORDER BY date ASC
-    ROWS BETWEEN 3 PRECEDING AND CURRENT ROW
-) as four_day_mavg_new_cases
-FROM `bigquery-public-data.covid19_open_data.covid19_open_data`
-where date between "2022-03-01" and "2022-03-08"
-and aggregation_level = 0
-order by country_name, date'
+# queries
+covid_data <- "
+    select countr
+    "
