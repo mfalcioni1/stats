@@ -21,6 +21,12 @@ config <- fromJSON(file = "./gcp-config.json")
 project <- config$`project-id`
 bq_auth(token = config$`data-bot`)
 
-# queries
-covid_query <- readChar("covid_query.bq", file.info("covid_query.bq")$size)
-covid_data <- bq_project_query(project, covid_query)
+# collect data
+if (Reduce("|", "covid_data.RDS" %in% list.files("data/"))) {
+    covid_data <- readRDS("data/covid_data.RDS")
+} else {
+    covid_query <- readChar("covid_query.bq", file.info("covid_query.bq")$size)
+    covid_tbl <- bq_project_query(project, covid_query)
+    covid_data <- bq_table_download(covid_tbl)
+    saveRDS(covid_data, "data/covid_data.RDS")
+}
