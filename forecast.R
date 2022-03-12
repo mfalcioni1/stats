@@ -22,6 +22,5 @@ project <- config$`project-id`
 bq_auth(token = config$`data-bot`)
 
 # queries
-covid_data <- "
-    select countr
-    "
+covid_query <- readChar("covid_query.bq", file.info("covid_query.bq")$size)
+covid_data <- bq_project_query(project, covid_query)

@@ -1,0 +1,63 @@
+with dates as (
+select cast("2020-03-10" as date) as start_date
+, cast("2022-03-10" as date) as end_date
+),
+base_covid as (
+select date
+, province_state as state
+, zcm.zip_code
+, confirmed as c_confirmed
+, confirmed - lag(confirmed) over (partition by zcm.zip_code order by date) n_confirmed
+, deaths as c_deaths
+, deaths - lag(deaths) over (partition by zcm.zip_code order by date) n_deaths
+from `bigquery-public-data.covid19_open_data.compatibility_view`, dates
+join `bigquery-public-data.geo_us_boundaries.zip_codes` zcm ON ST_WITHIN(location_geom, zip_code_geom) 
+where 1=1 
+and date between dates.start_date and dates.end_date
+and country_region = "United States of America"
+),
+base_weather_hist as (
+select postal_code as zip_code
+, date
+, avg_temperature_air_2m_f as avg_temp
+from `bigquery-public-data.covid19_weathersource_com.postal_code_day_history`, dates
+where 1=1 
+and date between dates.start_date and dates.end_date
+and country = "US"
+),
+base_weather_for as (
+select forecast_date as date
+, bc.state
+, postal_code as zip_code
+, avg_temperature_air_2m_f as avg_temp
+, NULL as c_confirmed
+, NULL as n_confirmed
+, NULL as c_deaths
+, NULL as n_deaths
+from `bigquery-public-data.covid19_weathersource_com.postal_code_day_forecast` fc, dates
+join (select distinct zip_code, state from base_covid) bc on fc.postal_code=bc.zip_code
+where 1=1 
+and forecast_date > dates.end_date
+and country = "US"
+),
+merged as (
+select date
+, state
+, zip_code
+, avg_temp
+, c_confirmed
+, n_confirmed
+, c_deaths
+, n_deaths
+from base_covid c
+join base_weather_hist wh using (date, zip_code)
+union all 
+select *
+from base_weather_for
+)
+select *
+from merged
+where 1=1
+--and zip_code = "15009"
+--and state = "Pennsylvania"
+order by date
